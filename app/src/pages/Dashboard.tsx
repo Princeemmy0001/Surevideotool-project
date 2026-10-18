@@ -63,7 +63,6 @@ type RealtimeClientEventMap = {
   error: { message: string };
   generationTick: { seconds: number };
   diagnostic: unknown;
-  balance: MorphlyBalance;
   lowCredit: { level: string };
   creditsExhausted: unknown;
 };
@@ -290,13 +289,6 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T
   return response.json();
 }
 
-type MorphlyBalance = {
-  available_credits?: number;
-  reserved_credits?: number;
-  charged_credits?: number;
-  billable_seconds?: number;
-};
-
 // Load the hosted module at its original URL so relative SDK chunks resolve correctly.
 const MORPHLY_SDK_URL = 'https://morphly.fun/sdk/morphly.js';
 async function loadMorphlySdk(): Promise<{
@@ -324,7 +316,6 @@ function Dashboard() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [stopPending, setStopPending] = useState(Boolean(retainedMorphlySession || retainedLocalSessionId));
   const [isStopping, setIsStopping] = useState(false);
-  const [morphlyBalance, setMorphlyBalance] = useState<MorphlyBalance | null>(null);
   const startInFlightRef = useRef(false);
   const mountedRef = useRef(true);
   const stopInFlightRef = useRef(false);
@@ -1406,13 +1397,11 @@ function Dashboard() {
         markRemoteFrameFresh();
       };
 
-      const onBalance = (balance: MorphlyBalance) => setMorphlyBalance(balance);
       const onLowCredit = () => toast.warning('Morphly workspace credits are running low.');
       const onCreditsExhausted = () => {
         toast.error('Morphly workspace credits exhausted. Add credits before starting again.');
         void safelyStopSessionRef.current?.();
       };
-      realtimeClient.on('balance', onBalance);
       realtimeClient.on('lowCredit', onLowCredit);
       realtimeClient.on('creditsExhausted', onCreditsExhausted);
       realtimeClient.on('connectionChange', onConnectionChange);
@@ -1421,7 +1410,6 @@ function Dashboard() {
       realtimeClient.on('generationTick', onGenerationTick);
 
       clientSubscriptionsCleanupRef.current = () => {
-        realtimeClient.off('balance', onBalance);
         realtimeClient.off('lowCredit', onLowCredit);
         realtimeClient.off('creditsExhausted', onCreditsExhausted);
         realtimeClient.off('connectionChange', onConnectionChange);
@@ -1823,7 +1811,6 @@ function Dashboard() {
     }
 
     startInFlightRef.current = true;
-    setMorphlyBalance(null);
     setIsLoading(true);
     setConnectionState('connecting');
     setUiStatus('Preparing camera...');
@@ -2016,13 +2003,14 @@ function Dashboard() {
         )}
       </main>
 
-      <div role="status" aria-live="polite" className="px-3 py-1 text-xs text-zinc-300">
-        {stopPending ? 'Morphly stop is unconfirmed. Use Retry Stop before starting again.' : uiStatus}
-        {morphlyBalance && <span className="ml-3">
-          Morphly workspace: {morphlyBalance.available_credits ?? '?'} available ? {morphlyBalance.reserved_credits ?? 0} reserved ? {morphlyBalance.charged_credits ?? 0} charged ? {morphlyBalance.billable_seconds ?? 0}s billed. Final settlement may be pending.
-        </span>}
+      <div
+        role="status"
+        aria-live="polite"
+        className={isStreaming && !stopPending ? 'sr-only' : 'px-3 py-1 text-xs text-zinc-300'}
+      >
+        {stopPending ? 'Stream stop is unconfirmed. Use Retry Stop before starting again.' : uiStatus}
       </div>
-      <p id="morphly-model-help" className="px-3 py-1 text-xs text-zinc-300">
+      <p id="morphly-model-help" className={isStreaming ? 'sr-only' : 'px-3 py-1 text-xs text-zinc-300'}>
         {selectedModel === 'M2.5'
           ? 'M2.5 replaces the subject using your reference image (up to 3 MB).'
           : 'M2.1 uses your garment reference and clothing instructions.'}
@@ -2140,7 +2128,7 @@ function Dashboard() {
             <div className="flex flex-col leading-tight">
               <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#60A5FA]">Remaining</span>
               <span className="text-[11px] font-bold text-[#E5E5E5] tabular-nums">{formatTime(getRemainingSeconds())}</span>
-              <span className="text-[9px] text-[#6B7280]">{statusDetail}</span>
+              {!isStreaming && <span className="text-[9px] text-[#6B7280]">{statusDetail}</span>}
             </div>
           </div>
         </div>
