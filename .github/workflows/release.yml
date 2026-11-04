@@ -44,7 +44,7 @@ jobs:
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
         VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
       run: |
-        $defaultSupabaseUrl = "https://zrtvliudyefmeeltxoaz.supabase.co"
+        $defaultSupabaseUrl = "https://watxqvvzrpnljtarsoup.supabase.co"
         $defaultSupabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydHZsaXVkeWVmbWVlbHR4b2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTA4MjEsImV4cCI6MjA4ODM4NjgyMX0.wlLOoTx8DN96a1qU5KMhP0bhFeC_y3K6JqrFQqODOFY"
 
         if ([string]::IsNullOrWhiteSpace($env:VITE_SUPABASE_URL)) {
